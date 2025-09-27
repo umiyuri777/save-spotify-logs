@@ -8,6 +8,7 @@ on:
 jobs:
   save-logs:
     runs-on: ubuntu-latest
+    environment: conf
 
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
