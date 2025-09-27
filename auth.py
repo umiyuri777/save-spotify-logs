@@ -1,6 +1,12 @@
+"""
+Module: auth.py
+Handles Spotify authentication using refresh tokens.
+Automatically refreshes access tokens when expired.
+"""
+
 import os
-import requests
 from base64 import b64encode
+import requests
 
 CLIENT_ID = os.environ["SPOTIFY_CLIENT_ID"]
 CLIENT_SECRET = os.environ["SPOTIFY_CLIENT_SECRET"]
@@ -8,7 +14,10 @@ REFRESH_TOKEN = os.environ["SPOTIFY_REFRESH_TOKEN"]
 
 
 class SpotifyAuth:
+    """Spotify 認証を扱うクラス"""
+
     def __init__(self):
+        """環境変数から認証情報を読み込み、初期化"""
         self.client_id = CLIENT_ID
         self.client_secret = CLIENT_SECRET
         self.refresh_token = REFRESH_TOKEN
@@ -17,27 +26,36 @@ class SpotifyAuth:
     def refresh_access_token(self) -> str:
         """Refresh access token using refresh_token"""
         url = "https://accounts.spotify.com/api/token"
+
         auth_str = f"{self.client_id}:{self.client_secret}"
         headers = {
             "Authorization": "Basic " + b64encode(auth_str.encode()).decode(),
             "Content-Type": "application/x-www-form-urlencoded",
         }
+
         data = {
             "grant_type": "refresh_token",
             "refresh_token": self.refresh_token,
         }
-        res = requests.post(url, headers=headers, data=data, timeout=10)
 
         res = requests.post(url, headers=headers, data=data, timeout=10)
-
         res.raise_for_status()
 
-        res.raise_for_status()
         self._access_token = res.json()["access_token"]
+        print("✅ : アクセストークンを更新")
         return self._access_token
 
     @property
     def token(self) -> str:
+        """Return current access token (refresh if not available)"""
         if not self._access_token:
             return self.refresh_access_token()
         return self._access_token
+
+
+if __name__ == "__main__":
+    auth = SpotifyAuth()
+    print("✅ : 認証オブジェクト作成")
+
+    token = auth.token
+    print("✅ : アクセストークン取得完了")

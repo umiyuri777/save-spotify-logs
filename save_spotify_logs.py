@@ -48,12 +48,11 @@ def save_to_supabase(track_logs, target_database):
 
 
 if __name__ == "__main__":
-
     auth = SpotifyAuth()
-    print("✅ : 認証")
+    print("✅ : 認証用のモジュールを呼び出し")
 
     tracks = fetch_recent_tracks(auth)
-    print("✅ : 履歴の取得")
+    print("✅ : 履歴の取得成功")
 
     save_to_supabase(tracks, supabase)
-    print("✅ : 履歴の保存")
+    print("✅ : 履歴の保存成功")
