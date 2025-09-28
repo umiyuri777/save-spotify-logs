@@ -9,13 +9,14 @@ import requests
 from supabase import create_client, Client
 from auth import SpotifyAuth
 
+# Supabase configuration
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 def fetch_recent_tracks(spotify_auth: SpotifyAuth):
-    """Spotify API から最近再生した曲を取得"""
+    """Fetch recently played tracks from Spotify API"""
 
     url = "https://api.spotify.com/v1/me/player/recently-played?limit=50"
     headers = {"Authorization": f"Bearer {spotify_auth.token}"}
@@ -26,7 +27,7 @@ def fetch_recent_tracks(spotify_auth: SpotifyAuth):
 
 
 def save_to_supabase(track_logs, target_database):
-    """Spotifyの履歴をSupabaseに保存（1時間以内に絞る）"""
+    """Save Spotify listening history to Supabase (filtered to the last hour)"""
 
     now = datetime.now(timezone.utc)
     one_hour_ago = now - timedelta(hours=1)
@@ -35,7 +36,7 @@ def save_to_supabase(track_logs, target_database):
         track = item["track"]
         played_at = datetime.fromisoformat(item["played_at"].replace("Z", "+00:00"))
 
-        # 1時間以内の曲だけ保存
+        # Only save tracks played within the last hour
         if played_at >= one_hour_ago:
             target_database.table("spotify-logs").insert(
                 {
@@ -49,10 +50,10 @@ def save_to_supabase(track_logs, target_database):
 
 if __name__ == "__main__":
     auth = SpotifyAuth()
-    print("✅ : 認証用のモジュールを呼び出し")
+    print("✅ : Loaded Spotify authentication module")
 
     tracks = fetch_recent_tracks(auth)
-    print("✅ : 履歴の取得成功")
+    print("✅ : Successfully fetched recent tracks")
 
     save_to_supabase(tracks, supabase)
-    print("✅ : 履歴の保存成功")
+    print("✅ : Successfully saved tracks to Supabase")

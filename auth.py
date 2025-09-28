@@ -14,17 +14,17 @@ REFRESH_TOKEN = os.environ["SPOTIFY_REFRESH_TOKEN"]
 
 
 class SpotifyAuth:
-    """Spotify 認証を扱うクラス"""
+    """Class to handle Spotify authentication"""
 
     def __init__(self):
-        """環境変数から認証情報を読み込み、初期化"""
+        """Load credentials from environment variables and initialize"""
         self.client_id = CLIENT_ID
         self.client_secret = CLIENT_SECRET
         self.refresh_token = REFRESH_TOKEN
         self._access_token = None
 
     def refresh_access_token(self) -> str:
-        """Refresh access token using refresh_token"""
+        """Request and refresh access token using refresh_token"""
         url = "https://accounts.spotify.com/api/token"
 
         auth_str = f"{self.client_id}:{self.client_secret}"
@@ -42,12 +42,12 @@ class SpotifyAuth:
         res.raise_for_status()
 
         self._access_token = res.json()["access_token"]
-        print("✅ : アクセストークンを更新")
+        print("✅ : Access token refreshed")
         return self._access_token
 
     @property
     def token(self) -> str:
-        """Return current access token (refresh if not available)"""
+        """Return the current access token (refresh if not available)"""
         if not self._access_token:
             return self.refresh_access_token()
         return self._access_token
@@ -55,7 +55,7 @@ class SpotifyAuth:
 
 if __name__ == "__main__":
     auth = SpotifyAuth()
-    print("✅ : 認証オブジェクト作成")
+    print("✅ : Auth object created")
 
     token = auth.token
-    print("✅ : アクセストークン取得完了")
+    print("✅ : Access token retrieved successfully")
