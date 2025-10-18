@@ -49,7 +49,7 @@ class SupabaseStorage(BaseStorage):
 
             # 過去1時間以内に再生されたトラックのみを保存
             if played_at >= one_hour_ago:
-                self.supabase.table("spotify-logs").insert({
+                self.supabase.table("spotify_logs").insert({
                     "track_name": track["name"],
                     "artist_name": track["artists"][0]["name"],
                     "played_at": played_at.isoformat(),
@@ -73,7 +73,7 @@ class SupabaseStorage(BaseStorage):
             最後に保存されたトラックの日時、またはトラックが保存されていない場合はNone
         """
         try:
-            result = self.supabase.table("spotify-logs").select("played_at").order("played_at", desc=True).limit(1).execute()
+            result = self.supabase.table("spotify_logs").select("played_at").order("played_at", desc=True).limit(1).execute()
             if result.data and len(result.data) > 0:
                 played_at_str = result.data[0]["played_at"]
                 # ISO形式からdatetimeに変換し、ミリ秒Unixタイムスタンプに変換してからdatetimeに戻す
@@ -93,7 +93,7 @@ class SupabaseStorage(BaseStorage):
         """
         try:
             # 接続性をチェックするためにシンプルなクエリを試行
-            result = self.supabase.table("spotify-logs").select("id").limit(1).execute()
+            result = self.supabase.table("spotify_logs").select("id").limit(1).execute()
             return True
         except Exception:
             return False
@@ -106,11 +106,11 @@ class SupabaseStorage(BaseStorage):
             テーブル統計情報の辞書
         """
         try:
-            result = self.supabase.table("spotify-logs").select("*", count="exact").execute()
+            result = self.supabase.table("spotify_logs").select("*", count="exact").execute()
             return {
                 "available": True,
                 "count": result.count,
-                "table": "spotify-logs"
+                "table": "spotify_logs"
             }
         except Exception as e:
             return {
