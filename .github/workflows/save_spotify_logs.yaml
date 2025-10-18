@@ -32,6 +32,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run save_spotify_logs
+      - name: Run Spotify logs collection
         run: |
-          python save_spotify_logs.py
+          python main.py
