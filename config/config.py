@@ -17,7 +17,7 @@ class AppConfig:
     """アプリケーション設定"""
 
     # ストレージ設定
-    storage_type: StorageType = "csv"
+    storage_type: StorageType = "supabase"
     csv_file_path: str = "spotify_logs.csv"
 
     # Spotify API設定
