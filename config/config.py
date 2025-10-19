@@ -35,34 +35,8 @@ class ConfigManager:
         # .envファイルを読み込む
         load_dotenv()
         
+        # 設定を初期化
         self.config = AppConfig()
-
-        # Load from environment variables
-        self._load_from_env()
-
-    def _load_from_env(self):
-        """環境変数から設定を読み込む"""
-        # ストレージタイプ
-        storage_type = os.getenv("SPOTIFY_LOGS_STORAGE_TYPE", "csv").lower()
-        if storage_type in ["csv", "supabase"]:
-            self.config.storage_type = storage_type
-
-        # CSVファイルパス
-        csv_file_path = os.getenv("SPOTIFY_LOGS_CSV_FILE_PATH")
-        if csv_file_path:
-            self.config.csv_file_path = csv_file_path
-
-        # 取得制限
-        fetch_limit = os.getenv("SPOTIFY_LOGS_FETCH_LIMIT")
-        if fetch_limit:
-            try:
-                self.config.fetch_limit = min(int(fetch_limit), 50)  # API制限で最大50
-            except ValueError:
-                pass
-
-        # デバッグモード
-        debug_mode = os.getenv("SPOTIFY_LOGS_DEBUG", "false").lower()
-        self.config.debug = debug_mode in ["true", "1", "yes", "on"]
 
     def get_storage_config(self) -> dict:
         """ストレージ固有の設定を取得する"""
