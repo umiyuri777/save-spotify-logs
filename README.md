@@ -1,137 +1,150 @@
-# Spotify ログ分析システム
+# Spotify ログ分析アプリ
 
-このプロジェクトは、Spotifyの再生履歴を収集・分析し、視覚的なダッシュボードで表示するシステムです。
+GitHub PagesでホスティングできるSpotifyログ分析アプリケーションです。Supabaseから直接データを取得して、楽曲ランキングとアーティスト分布を表示します。
 
 ## 機能
 
-- **ログ収集**: Spotify APIから再生履歴を自動収集
-- **データ分析**: 聞いた回数が多い曲のランキング表示
-- **視覚化**: アーティスト別の再生分布を円グラフで表示
-- **統計情報**: 総再生回数、ユニーク曲数、アーティスト数、総再生時間の表示
-
-## プロジェクト構造
-
-```
-save-spotify-logs/
-├── main.py                 # メインのログ収集スクリプト
-├── api_server.py           # 分析用Web APIサーバー
-├── spotify_logs.csv        # 収集されたログデータ
-├── templates/
-│   └── index.html          # メインのWebページ
-├── static/
-│   ├── css/
-│   │   └── style.css       # スタイルシート
-│   └── js/
-│       └── app.js          # フロントエンドJavaScript
-├── useCase/                # ビジネスロジック
-├── LogRepository/          # データストレージ
-├── config/                 # 設定管理
-└── cmd/                    # コマンドラインツール
-```
-
-## セットアップ
-
-### 1. 依存関係のインストール
-
-```bash
-# 仮想環境の作成（既に存在する場合はスキップ）
-python -m venv venv
-
-# 仮想環境の有効化
-source venv/bin/activate  # macOS/Linux
-# または
-venv\Scripts\activate     # Windows
-
-# 依存関係のインストール
-pip install -r requirements.txt
-```
-
-### 2. Spotify API設定
-
-1. [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)でアプリを作成
-2. Client IDとClient Secretを取得
-3. リダイレクトURIを設定（例: `http://localhost:8080/callback`）
-
-### 3. 環境変数の設定
-
-`.env`ファイルを作成し、以下の設定を追加：
-
-```env
-SPOTIFY_CLIENT_ID=your_client_id
-SPOTIFY_CLIENT_SECRET=your_client_secret
-SPOTIFY_REDIRECT_URI=http://localhost:8080/callback
-```
+- 🎵 **楽曲ランキング**: 再生回数が多い楽曲のトップ20を表示
+- 🎨 **アーティスト分布**: 円グラフとリストでアーティスト別の再生割合を表示
+- 📊 **統計情報**: 総再生回数、ユニーク曲数、アーティスト数、総再生時間を表示
+- 🔗 **Spotify連携**: 楽曲を直接Spotifyで再生可能
+- 📱 **レスポンシブデザイン**: モバイルデバイスでも快適に表示
 
 ## 使用方法
 
-### 1. ログデータの収集
+### 1. Supabaseの設定
 
-```bash
-# 初回認証（リフレッシュトークンの取得）
-python cmd/getToken/get_RefrashToken.py
+1. Supabaseプロジェクトを作成
+2. 提供されたSQLスキーマでテーブルとビューを作成
+3. Supabase URLとAnon Keyを取得
 
-# ログデータの収集
-python main.py
+### 2. アプリケーションの使用
+
+1. ページを開く
+2. Supabase設定セクションで以下を入力：
+   - **Supabase URL**: `https://your-project.supabase.co`
+   - **Supabase Anon Key**: プロジェクトの匿名キー
+3. 「接続してデータを読み込み」ボタンをクリック
+4. データが読み込まれると、統計情報とランキングが表示されます
+
+### 3. GitHub Pagesでのデプロイ
+
+1. このリポジトリをフォーク
+2. GitHub Pagesを有効化
+3. `index.html`、`app.js`、`style.css`をルートディレクトリに配置
+4. 設定は完了です！
+
+## 必要なSupabaseスキーマ
+
+以下のSQLをSupabaseで実行してください：
+
+```sql
+-- Spotify ログテーブルの作成
+CREATE TABLE spotify_logs (
+    id BIGSERIAL PRIMARY KEY,
+    track_name VARCHAR(255) NOT NULL,
+    artist_name VARCHAR(255) NOT NULL,
+    played_at TIMESTAMPTZ NOT NULL,
+    saved_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    track_id VARCHAR(50) NOT NULL,
+    artist_id VARCHAR(50) NOT NULL,
+    album_name VARCHAR(255) NOT NULL,
+    album_id VARCHAR(50) NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    popularity INTEGER,
+    external_urls JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- インデックスの作成
+CREATE INDEX idx_spotify_logs_track_id ON spotify_logs(track_id);
+CREATE INDEX idx_spotify_logs_artist_id ON spotify_logs(artist_id);
+CREATE INDEX idx_spotify_logs_played_at ON spotify_logs(played_at);
+CREATE INDEX idx_spotify_logs_artist_name ON spotify_logs(artist_name);
+CREATE INDEX idx_spotify_logs_track_name ON spotify_logs(track_name);
+
+-- 複合インデックス
+CREATE INDEX idx_spotify_logs_track_artist ON spotify_logs(track_name, artist_name);
+CREATE INDEX idx_spotify_logs_played_at_desc ON spotify_logs(played_at DESC);
+
+-- RLSの設定
+ALTER TABLE spotify_logs ENABLE ROW LEVEL SECURITY;
+
+-- ポリシーの作成
+CREATE POLICY "Allow read access for all users" ON spotify_logs
+    FOR SELECT USING (true);
+
+CREATE POLICY "Allow insert for authenticated users" ON spotify_logs
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- 統計情報用のビュー
+CREATE VIEW spotify_stats AS
+SELECT 
+    COUNT(*) as total_plays,
+    COUNT(DISTINCT track_id) as unique_tracks,
+    COUNT(DISTINCT artist_id) as unique_artists,
+    COUNT(DISTINCT album_id) as unique_albums,
+    SUM(duration_ms) as total_duration_ms,
+    AVG(popularity) as avg_popularity
+FROM spotify_logs;
+
+-- 人気曲ランキング用のビュー
+CREATE VIEW track_ranking AS
+SELECT 
+    track_name,
+    artist_name,
+    album_name,
+    COUNT(*) as play_count,
+    AVG(popularity) as avg_popularity,
+    SUM(duration_ms) as total_duration_ms,
+    MAX(played_at) as last_played,
+    external_urls
+FROM spotify_logs
+GROUP BY track_name, artist_name, album_name, external_urls
+ORDER BY play_count DESC;
+
+-- アーティスト分布用のビュー
+CREATE VIEW artist_distribution AS
+SELECT 
+    artist_name,
+    artist_id,
+    COUNT(*) as play_count,
+    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as percentage,
+    COUNT(DISTINCT track_id) as unique_tracks,
+    SUM(duration_ms) as total_duration_ms
+FROM spotify_logs
+GROUP BY artist_name, artist_id
+ORDER BY play_count DESC;
 ```
 
-### 2. 分析ダッシュボードの起動
+## ファイル構成
 
-```bash
-# APIサーバーの起動
-python api_server.py
 ```
-
-ブラウザで `http://localhost:8000` にアクセスしてダッシュボードを表示します。
-
-## API エンドポイント
-
-- `GET /` - メインダッシュボードページ
-- `GET /api/stats` - 全体統計情報
-- `GET /api/track-ranking?limit=10` - 曲のランキング
-- `GET /api/artist-distribution` - アーティスト分布データ
-
-## ダッシュボード機能
-
-### 統計カード
-- **総再生回数**: 収集されたログの総再生回数
-- **ユニーク曲数**: 再生されたユニークな曲の数
-- **アーティスト数**: 再生されたアーティストの数
-- **総再生時間**: 全ての再生時間の合計
-
-### 人気曲ランキング
-- 再生回数順にソートされた曲のランキング
-- 曲名、アーティスト名、アルバム名、再生回数を表示
-- Spotifyへの直接リンクボタン
-
-### アーティスト分布
-- ドーナツチャートでアーティスト別の再生分布を表示
-- 上位アーティストの詳細リスト
-- 再生回数と割合を表示
+├── index.html          # メインHTMLファイル
+├── app.js             # JavaScriptアプリケーション
+├── style.css          # CSSスタイルシート
+└── README.md          # このファイル
+```
 
 ## 技術スタック
 
-- **バックエンド**: Python, Flask
-- **フロントエンド**: HTML5, CSS3, JavaScript, Bootstrap 5
+- **フロントエンド**: HTML5, CSS3, JavaScript (ES6+)
+- **UI フレームワーク**: Bootstrap 5
 - **チャート**: Chart.js
-- **データストレージ**: CSVファイル
-- **API**: Spotify Web API
+- **データベース**: Supabase (PostgreSQL)
+- **ホスティング**: GitHub Pages
+
+## セキュリティ
+
+- SupabaseのRLS（Row Level Security）を使用
+- 匿名キーは読み取り専用アクセス
+- 設定情報はローカルストレージに保存（ブラウザ内のみ）
 
 ## ライセンス
 
-このプロジェクトはMITライセンスの下で公開されています。
+MIT License
 
-## 貢献
+## サポート
 
-プルリクエストやイシューの報告を歓迎します。
-
-## トラブルシューティング
-
-### よくある問題
-
-1. **認証エラー**: Spotify APIの認証情報が正しく設定されているか確認
-2. **データが表示されない**: `spotify_logs.csv`ファイルが存在し、データが含まれているか確認
-3. **APIサーバーが起動しない**: ポート8000が使用されていないか確認
-
-### ログの確認
-
-デバッグモードを有効にするには、`config/config.py`で`debug=True`に設定してください。
+問題が発生した場合は、GitHubのIssuesで報告してください。
