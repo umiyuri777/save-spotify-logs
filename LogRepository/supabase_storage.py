@@ -31,7 +31,7 @@ class SupabaseStorage(BaseStorage):
 
     def save_tracks(self, tracks: List[Dict[str, Any]]) -> None:
         """
-        Supabaseにトラックを保存する（過去1時間にフィルタリング）
+        Supabaseにトラックを保存する
 
         Args:
             tracks: 保存するトラックデータのリスト
@@ -40,28 +40,26 @@ class SupabaseStorage(BaseStorage):
             return
 
         now = datetime.now(timezone.utc)
-        one_hour_ago = now - timedelta(hours=1)
 
         saved_count = 0
         for item in tracks:
             track = item["track"]
             played_at = datetime.fromisoformat(item["played_at"].replace("Z", "+00:00"))
 
-            # 過去1時間以内に再生されたトラックのみを保存
-            if played_at >= one_hour_ago:
-                self.supabase.table("spotify-logs").insert({
-                    "track_name": track["name"],
-                    "artist_name": track["artists"][0]["name"],
-                    "played_at": played_at.isoformat(),
-                    "saved_at": now.isoformat(),
-                    "track_id": track["id"],
-                    "artist_id": track["artists"][0]["id"],
-                    "album_name": track["album"]["name"],
-                    "album_id": track["album"]["id"],
-                    "duration_ms": track["duration_ms"],
-                    "popularity": track.get("popularity", 0),
-                }).execute()
-                saved_count += 1
+
+            self.supabase.table("spotify_logs").insert({
+                "track_name": track["name"],
+                "artist_name": track["artists"][0]["name"],
+                "played_at": played_at.isoformat(),
+                "saved_at": now.isoformat(),
+                "track_id": track["id"],
+                "artist_id": track["artists"][0]["id"],
+                "album_name": track["album"]["name"],
+                "album_id": track["album"]["id"],
+                "duration_ms": track["duration_ms"],
+                "popularity": track.get("popularity", 0),
+            }).execute()
+            saved_count += 1
 
         print(f"✅ : {saved_count} tracks saved to Supabase")
 
@@ -73,7 +71,7 @@ class SupabaseStorage(BaseStorage):
             最後に保存されたトラックの日時、またはトラックが保存されていない場合はNone
         """
         try:
-            result = self.supabase.table("spotify-logs").select("played_at").order("played_at", desc=True).limit(1).execute()
+            result = self.supabase.table("spotify_logs").select("played_at").order("played_at", desc=True).limit(1).execute()
             if result.data and len(result.data) > 0:
                 played_at_str = result.data[0]["played_at"]
                 # ISO形式からdatetimeに変換し、ミリ秒Unixタイムスタンプに変換してからdatetimeに戻す
@@ -93,7 +91,7 @@ class SupabaseStorage(BaseStorage):
         """
         try:
             # 接続性をチェックするためにシンプルなクエリを試行
-            result = self.supabase.table("spotify-logs").select("id").limit(1).execute()
+            result = self.supabase.table("spotify_logs").select("id").limit(1).execute()
             return True
         except Exception:
             return False
@@ -106,11 +104,11 @@ class SupabaseStorage(BaseStorage):
             テーブル統計情報の辞書
         """
         try:
-            result = self.supabase.table("spotify-logs").select("*", count="exact").execute()
+            result = self.supabase.table("spotify_logs").select("*", count="exact").execute()
             return {
                 "available": True,
                 "count": result.count,
-                "table": "spotify-logs"
+                "table": "spotify_logs"
             }
         except Exception as e:
             return {

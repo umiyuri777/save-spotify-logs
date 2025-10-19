@@ -1,10 +1,14 @@
 """auth-server.py"""
 from base64 import b64encode
+import os
 import requests
 from flask import Flask, redirect, request
+from dotenv import load_dotenv
 
-CLIENT_ID = "ddd9fc97886e43098e3cfa70d64a3e7c"
-CLIENT_SECRET = "e48edb8095024f0ea11c8435ff5f429b"
+# 環境変数から読み込み
+load_dotenv()
+CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = "http://[::1]:5000/callback"
 
 app = Flask(__name__)
