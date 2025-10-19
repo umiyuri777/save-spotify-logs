@@ -86,6 +86,7 @@ def run_collection_cycle():
         print("✅ : Components initialized successfully")
         
         last_saved = storage.get_last_saved_timestamp()
+        print(f"📊 Last saved timestamp: {last_saved}")
         if last_saved is None:
             since_timestamp = str(int(datetime.now(timezone.utc).timestamp() * 1000))
         else:
