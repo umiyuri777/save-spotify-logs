@@ -86,17 +86,22 @@ def run_collection_cycle():
         print("✅ : Components initialized successfully")
         
         last_saved = storage.get_last_saved_timestamp()
+        
+        tracks = []
         print(f"📊 Last saved timestamp: {last_saved}")
         if last_saved is None:
-            since_timestamp = str(int(datetime.now(timezone.utc).timestamp() * 1000))
+            print("📊 No last saved timestamp found, fetching all tracks")
+            tracks = fetcher.fetch_recent_tracks(config_manager.config.fetch_limit)
+
         else:
+            print(f"📊 Last saved timestamp found: {last_saved}")
             since_timestamp = str(int(last_saved.timestamp() * 1000))
 
-        # トラックの取得
-        print(f"📊 Fetching tracks since timestamp: {since_timestamp}")
-        tracks = fetcher.fetch_recent_tracks_since(since_timestamp)
-
-        if not tracks:
+            # トラックの取得
+            print(f"📊 Fetching tracks since timestamp: {since_timestamp}")
+            tracks = fetcher.fetch_recent_tracks_since(since_timestamp)
+        
+        if len(tracks) == 0:
             print("✅ : No tracks to save")
             return True
 
