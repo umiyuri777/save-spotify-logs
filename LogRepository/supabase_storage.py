@@ -4,10 +4,11 @@ Spotifyトラックデータ用のSupabaseストレージ実装。
 """
 
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import List, Dict, Any
 from supabase import create_client, Client
 from .base_storage import BaseStorage
+import json
 
 
 class SupabaseStorage(BaseStorage):
@@ -58,6 +59,7 @@ class SupabaseStorage(BaseStorage):
                 "album_id": track["album"]["id"],
                 "duration_ms": track["duration_ms"],
                 "popularity": track.get("popularity", 0),
+                "external_urls": json.dumps(track["external_urls"])
             }).execute()
             saved_count += 1
 
